@@ -1,0 +1,12 @@
+CAPSTONE EVALUATION SCORECARD
+=======================================================
+Date: 2026-07-10 08:30 UTC
+
+  faithfulness                 Score: 0.8667   Threshold: 0.85   PASS
+  answer_relevancy             Score: 1.0000   Threshold: 0.75   PASS
+  toxicity                     Score: 0.0000   Threshold: 0.10   PASS
+  hit_rate_at_3                Score: 1.0000   Threshold: 0.75   PASS
+  task_success_rate            Score: 0.9000   Threshold: 0.90   PASS
+  tool_call_accuracy           Score: 1.0000   Threshold: 0.95   PASS
+
+GATE: PASS (6/6 metrics passed)

@@ -1,0 +1,36 @@
+ADR-001: Use RAG + Agent for Walmart Retail Assistant
+=================================================================
+Date     : 2026-07-10
+Status   : Accepted
+Deciders : ML Platform Team, Engineering Manager, Principal Architect
+
+CONTEXT
+-----------------------------------------------------------------
+The Walmart Retail Assistant must handle 100,000 queries/day across five categories. Multi_step queries (10% of volume) require dynamic tool dispatch where the next tool cannot be determined until the prior result is seen -- for example: price lookup -> inventory check -> cross-product comparison. A deterministic workflow cannot branch on intermediate content. Traditional keyword search cannot answer natural language queries or perform cross-product comparisons. P95 latency SLO: 3000ms.  Monthly budget ceiling: $1,500.
+
+DECISION
+-----------------------------------------------------------------
+Use RAG + Agent with a keyword-based query classifier that routes to four tools: price_lookup, order_status, policy_search, store_hours. Model routing: gpt-4o-mini for single-category queries (90% of volume); gpt-4-turbo for multi_step queries (10%). Context injected via mock_retrieve() -- top-3 documents by keyword relevance score.
+
+OPTIONS CONSIDERED
+-----------------------------------------------------------------
+  RAG + Agent  --  CHOSEN  (weighted score: 3.85)
+    Pros: Quality 5/5 -- handles all five categories; dynamic tool dispatch; model routing keeps cost within $1,500/mo
+    Cons: gpt-4-turbo cost for 10% of queries; team ramp-up on agent patterns and observability
+
+  RAG + Deterministic Workflow  --  not chosen  (score: 3.70)
+    Pros: Cost 4/5; maintainability 4/5; explicit DAG is unit-testable at each step
+    Cons: Quality 3/5 -- cannot branch dynamically; multi_step queries either fail or require manual exception paths
+
+  Traditional Search API  --  DISQUALIFIED  (quality 1/5)
+    Pros: Cost 5/5; latency 5/5; no model dependency; sub-100ms responses
+    Cons: Quality 1/5 -- cannot answer NL queries or cross-product comparisons; fails on all five query categories
+
+CONSEQUENCES
+-----------------------------------------------------------------
+  Positive  : All five query categories handled natively; extensible to new tool nodes without rewriting core logic
+  Negative  : Latency variability on multi_step queries; hard dependency on OpenAI API availability
+  Risks     : Prompt injection; hallucination on out-of-KB queries; cost overrun on traffic spikes during promotions
+  Mitigation: System prompt hardening (IN08); RAG context grounding; $50/day spend alert (IN14); circuit breaker with cached fallback (IN07)
+
+REVIEW DATE: 2027-01-01  or when daily volume exceeds 500,000 queries
